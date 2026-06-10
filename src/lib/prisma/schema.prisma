@@ -1,13 +1,113 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
 
-// Get a free hosted Postgres database in seconds: `npx create-db`
 
-generator client {
-  provider = "prisma-client"
-  output   = "../src/generated/prisma"
+generator client{
+  provider="prisma-client"
+  output="../../generated/prisma"
 }
 
-datasource db {
-  provider = "postgresql"
+
+datasource db{
+  provider="postgresql"
+
+}
+
+enum  TokenType{
+  EMAIL_VERIFICATION
+  PASSWORD_RESET
+  
+}//enums restricts field  to predefined values only -> secure
+
+enum Sentiment{
+  POSITIVE
+  NEGATIVE
+  NEUTRAL
+}
+
+model User{
+  id String @id @default(cuid())// primary ley and default uuid
+  username String @unique
+  email String @unique
+  password String 
+  isVerified       Boolean  @default(false)
+
+  acceptMessages   Boolean  @default(true)
+  isPublic         Boolean  @default(true)
+
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt//timestanps and auto updates
+
+  verificationTokens VerificationToken[]//modelname[] defines one to many relationship
+  messages           Message[]            @relation("ReceivedMessages")
+  sentMessages       Message[]            @relation("SentMessages")
+
+  aiUsage            AIUsage?//optional paramenteer on one to one relationship
+
+
+  @@index([email])
+  @@index([username])
+
+}
+
+model VerificationToken{
+  id String @id @default(cuid())
+  userId String
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)//foreign key userid match id in user if user delete all token form user delete
+
+    token       String @unique
+  type        TokenType
+
+  expiresAt   DateTime
+
+  createdAt   DateTime  @default(now())
+
+  @@index([userId])
+  @@index([token])
+  @@index([expiresAt])
+}
+
+
+model Message {
+  id           String     @id @default(cuid())
+
+  receiverId   String
+  receiver     User       @relation("ReceivedMessages", fields: [receiverId], references: [id], onDelete: Cascade)
+
+  // Sender is stored but NEVER exposed to receiver — anonymity preserved
+  // Nullable to remain backward-compatible; all new messages will have a senderId
+  senderId     String?
+  sender       User?      @relation("SentMessages", fields: [senderId], references: [id], onDelete: SetNull)
+
+  content      String
+
+  isRead       Boolean    @default(false)
+  isArchived   Boolean    @default(false)
+  isDeleted    Boolean    @default(false)
+
+  sentiment    Sentiment?
+
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  @@index([receiverId])
+  @@index([senderId])
+  @@index([createdAt])
+  @@index([isRead])
+  @@index([isArchived])
+}
+
+model AIUsage {
+  id                String   @id @default(cuid())
+
+  userId            String   @unique
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  suggestionsUsed   Int      @default(0)
+  analysisUsed      Int      @default(0)
+
+  lastUsedAt        DateTime?
+
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([userId])
 }
