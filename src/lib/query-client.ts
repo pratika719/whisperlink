@@ -13,6 +13,9 @@ export function makeQueryClient() {
   });
 }
 
+//queryclient s for cache storage not every click calls api it derives from cache
+//useQuery for server side rendering
+
 let browserQueryClient: QueryClient | undefined = undefined;
 
 export function getQueryClient() {

@@ -45,3 +45,10 @@ export async function POST(
     return errorResponse(error);
   }
 }
+
+//take responce and deserialize it
+//validate it using zod safeparse
+//handler call service layer
+//send response or error
+//
+//

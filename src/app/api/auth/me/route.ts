@@ -12,6 +12,7 @@ import {
   errorResponse,
   successResponse,
 } from "@/lib/route-handler";
+import { userRepository } from "@/repositories/user.repository";
 
 export async function GET() {
   try {
@@ -30,11 +31,30 @@ export async function GET() {
         }
       );
     }
-
-    const user =
+console.log("token from me",token);
+    const decoded =
       await verifyAccessToken(token);
 
-    return successResponse(user);
+    const user = await userRepository.findById(decoded.sub);
+    if (!user) {
+      return Response.json(
+        {
+          success: false,
+          message: "User not found",
+        },
+        {
+          status: 404,
+        }
+      );
+    }
+
+    return successResponse({
+      id: user.id,
+      email: user.email,
+      username: user.username,
+      isVerified: user.isVerified,
+      acceptMessages: user.acceptMessages,
+    });
   } catch (error) {
     return errorResponse(error);
   }

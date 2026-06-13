@@ -71,10 +71,10 @@ export const env = createEnv({
     SMTP_USER: z.string().min(1),
     SMTP_PASSWORD: z.string().min(1),
 
-    // GOOGLE GEMINI API KEY
+    // GROQ API KEY
     // Used for AI features: message analysis, response suggestions.
-    // Keys look like: AIzaSyxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-    GEMINI_API_KEY: z.string().min(20),
+    // Keys look like: gsk_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+    GROQ_API_KEY: z.string().min(20),
 
     EMAIL_FROM: z.string().email(),
 
@@ -111,7 +111,7 @@ export const env = createEnv({
     SMTP_PORT: process.env.SMTP_PORT,
     SMTP_USER: process.env.SMTP_USER,
     SMTP_PASSWORD: process.env.SMTP_PASSWORD,
-    GEMINI_API_KEY: process.env.GEMINI_API_KEY,
+    GROQ_API_KEY: process.env.GROQ_API_KEY,
     EMAIL_FROM: process.env.EMAIL_FROM,
     NODE_ENV: process.env.NODE_ENV,
     NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,

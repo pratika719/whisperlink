@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Settings, LogOut } from "lucide-react";
+import { Settings, LogOut, Menu, Inbox, LayoutDashboard } from "lucide-react";
 
 import {
   DropdownMenu,
@@ -16,6 +16,7 @@ import {
   AvatarImage,
 } from "@/components/ui/avatar";
 
+import { Button } from "@/components/ui/button";
 import { authClient } from "@/features/auth/api/auth.client";
 import { useAuthStore } from "@/features/auth/store/auth.store";
 
@@ -53,6 +54,37 @@ export function Navbar({
         </Link>
 
         <div className="flex items-center gap-4">
+          {/* Mobile Navigation Hamburger Menu */}
+          <div className="xl:hidden">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-9 w-9 rounded-xl outline-none hover:bg-accent">
+                  <Menu className="h-5 w-5" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48 mt-2">
+                <DropdownMenuItem asChild>
+                  <Link href="/dashboard" className="flex items-center gap-2 cursor-pointer w-full">
+                    <LayoutDashboard className="h-4 w-4" />
+                    Dashboard
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/dashboard/inbox" className="flex items-center gap-2 cursor-pointer w-full">
+                    <Inbox className="h-4 w-4" />
+                    Inbox
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/dashboard/settings" className="flex items-center gap-2 cursor-pointer w-full">
+                    <Settings className="h-4 w-4" />
+                    Settings
+                  </Link>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button className="outline-none">

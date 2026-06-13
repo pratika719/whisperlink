@@ -4,15 +4,20 @@ import { Sentiment } from "@/generated/prisma/client";
 const DEFAULT_PAGE_SIZE = 20;
 
 export const messageRepository = {
-  async create(receiverId: string, content: string) {
+  async create(receiverId: string, content: string, senderId?: string, sentiment?: Sentiment, sentimentScore?: number) {
     return prisma.message.create({
       data: {
         receiverId,
         content,
+        senderId,
+        sentiment,
+        sentimentScore,
       },
       select: {
         id: true,
         content: true,
+        sentiment: true,
+        sentimentScore: true,
         createdAt: true,
       },
     });
@@ -68,6 +73,7 @@ export const messageRepository = {
         id: true,
         content: true,
         sentiment: true,
+        sentimentScore: true,
         isRead: true,
         isArchived: true,
         createdAt: true,
@@ -102,6 +108,15 @@ export const messageRepository = {
     });
   },
 
+  async countTotal(receiverId: string) {
+    return prisma.message.count({
+      where: {
+        receiverId,
+        isDeleted: false,
+      },
+    });
+  },
+
   async markAsRead(
     id: string,
     receiverId: string
@@ -114,6 +129,23 @@ export const messageRepository = {
       },
       data: {
         isRead: true,
+      },
+    });
+  },
+
+  async updateReadStatus(
+    id: string,
+    receiverId: string,
+    isRead: boolean
+  ) {
+    return prisma.message.updateMany({
+      where: {
+        id,
+        receiverId,
+        isDeleted: false,
+      },
+      data: {
+        isRead,
       },
     });
   },
@@ -150,7 +182,8 @@ export const messageRepository = {
 
   async updateSentiment(
     id: string,
-    sentiment: Sentiment
+    sentiment: Sentiment,
+    sentimentScore?: number
   ) {
     return prisma.message.update({
       where: {
@@ -158,10 +191,12 @@ export const messageRepository = {
       },
       data: {
         sentiment,
+        sentimentScore,
       },
       select: {
         id: true,
         sentiment: true,
+        sentimentScore: true,
       },
     });
   },

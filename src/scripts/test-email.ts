@@ -64,9 +64,10 @@ async function main() {
     console.log("\n✅ Email sent successfully!");
     console.log("   Message ID:", info.messageId);
     console.log("\n👉 Check your inbox (and spam folder).");
-  } catch (error: any) {
+  } catch (error) {
+    const err = error as Error;
     console.error("\n❌ Nodemailer returned an error:");
-    console.error(error.message);
+    console.error(err.message || err);
     console.log("\n💡 Common causes:");
     console.log("   • SMTP credentials are incorrect");
     console.log("   • SMTP host or port is incorrect");

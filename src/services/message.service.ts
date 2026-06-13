@@ -1,5 +1,8 @@
 import { userRepository } from "@/repositories/user.repository";
 import { messageRepository } from "@/repositories/message.repository";
+import { aiService } from "@/services/ai.service";
+import { aiUsageRepository } from "@/repositories/ai-usage.repository";
+import { Sentiment } from "@/generated/prisma/client";
 
 import { SendMessageInput } from "@/schemas/message.schema";
 
@@ -41,11 +44,27 @@ export const messageService={
 
  }
 
- const message =
-      await messageRepository.create(
-        receiver.id,
-        content
-      );
+  // AI Analysis (Production Grade feature with rate-limiting)
+  // Analyze the sentiment of the message before storing it, if the receiver's limit allows it.
+  let sentimentResult: { sentiment: Sentiment; score: number } | undefined = undefined;
+  try {
+    const { allowed } = await aiUsageRepository.canUseAnalysis(receiver.id);
+    if (allowed) {
+      sentimentResult = await aiService.analyzeSentiment(content);
+      await aiUsageRepository.incrementAnalysis(receiver.id);
+    }
+  } catch (error) {
+    console.error("AI Sentiment Analysis rate-limiting check or call failed:", error);
+  }
+
+  const message =
+       await messageRepository.create(
+         receiver.id,
+         content,
+         senderId,
+         sentimentResult?.sentiment,
+         sentimentResult?.score
+       );
 
     return message;
 

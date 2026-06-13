@@ -3,6 +3,8 @@ export interface Message {
   content: string;
   isRead: boolean;
   isArchived: boolean;
+  sentiment?: "POSITIVE" | "NEGATIVE" | "NEUTRAL";
+  sentimentScore?: number | null;
   createdAt: string;
 }
 

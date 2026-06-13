@@ -21,3 +21,7 @@ export default function LoginPage() {
     </AuthLayout>
   );
 }
+
+
+//suspence here is used for adding streaming or loading skeletons in the page to improv ux 
+//if you remove suspense, then the page will not render until the query is resolved

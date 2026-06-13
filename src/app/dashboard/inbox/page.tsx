@@ -1,9 +1,11 @@
 "use client";
 
-import { Inbox } from "lucide-react";
+import { Inbox, CheckCheck } from "lucide-react";
 
+import { Button } from "@/components/ui/button";
 import { useInbox } from "@/features/messages/hooks/use-inbox";
 import { useInboxStore } from "@/features/messages/store/inbox.store";
+import { useMarkAllRead } from "@/features/messages/hooks/use-mark-all-read";
 import { MessageCard } from "@/features/messages/components/message-card";
 import { InboxFilters } from "@/features/messages/components/inbox-filters";
 import { InboxSkeleton } from "@/features/messages/components/inbox-skeleton";
@@ -12,6 +14,7 @@ import { EmptyInbox } from "@/features/messages/components/empty-inbox";
 export default function InboxPage() {
   const { data, isLoading, isError } = useInbox();
   const filter = useInboxStore((s) => s.filter);
+  const markAllReadMutation = useMarkAllRead();
 
   const filteredMessages = data?.messages ? (() => {
     switch (filter) {
@@ -41,7 +44,21 @@ export default function InboxPage() {
             )}
           </div>
         </div>
-        <InboxFilters />
+        <div className="flex items-center gap-3">
+          {data && data.unreadCount > 0 && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-9 gap-1.5 text-xs border-border/60 hover:bg-muted"
+              onClick={() => markAllReadMutation.mutate()}
+              disabled={markAllReadMutation.isPending}
+            >
+              <CheckCheck className="h-3.5 w-3.5" />
+              <span>Mark all as read</span>
+            </Button>
+          )}
+          <InboxFilters />
+        </div>
       </div>
 
       {/* Content */}

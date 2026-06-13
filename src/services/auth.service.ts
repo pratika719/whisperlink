@@ -171,6 +171,7 @@ export const authService={
 
     async login(data:LoginInput){
         const user=await userRepository.findByEmailWithPassword(data.email);
+        console.log(user)
 
         if(!user){
             throw new ApiError(401, "Invalid credentials");

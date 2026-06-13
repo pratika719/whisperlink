@@ -17,7 +17,7 @@ enum  TokenType{
   
 }//enums restricts field  to predefined values only -> secure
 
-enum Sentiment{
+enum Sentiment {
   POSITIVE
   NEGATIVE
   NEUTRAL
@@ -41,6 +41,7 @@ model User{
   sentMessages       Message[]            @relation("SentMessages")
 
   aiUsage            AIUsage?//optional paramenteer on one to one relationship
+  aiUsageLogs        AIUsageLog[]
 
 
   @@index([email])
@@ -83,7 +84,8 @@ model Message {
   isArchived   Boolean    @default(false)
   isDeleted    Boolean    @default(false)
 
-  sentiment    Sentiment?
+  sentiment       Sentiment?
+  sentimentScore  Float?
 
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
@@ -110,4 +112,21 @@ model AIUsage {
   updatedAt         DateTime @updatedAt
 
   @@index([userId])
+}
+
+// Per-request AI usage log for analytics and auditing.
+// Unlike AIUsage (which tracks daily quotas), this records every individual AI call.
+model AIUsageLog {
+  id        String   @id @default(cuid())
+
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  feature   String   // "suggestions" | "sentiment-analysis"
+
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([feature])
+  @@index([createdAt])
 }

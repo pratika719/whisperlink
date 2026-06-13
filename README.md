@@ -25,6 +25,12 @@ WhisperLink is a modern, production-grade anonymous feedback application. It all
 * **Dark Mode:** Built-in seamless dark mode support (`next-themes`).
 * **Optimistic UI Updates:** Fast and fluid interactions for deleting and archiving messages via React Query mutations.
 
+### 5. Advanced AI Capabilities (Groq + Llama 3.3)
+* **AI Message Suggestions:** Inspires visitors on public profile pages by generating context-sensitive conversation suggestions.
+* **AI Sentiment Analyzer:** Categorizes incoming messages (POSITIVE, NEGATIVE, NEUTRAL) with confidence ratings and presents color-coded visual indicators in the dashboard.
+* **Token Bucket Quota Engine:** Enforces daily limits securely via atomic SQL database writes to protect API quotas.
+* **Full Architectural Deep Dive:** Documented in [docs/ai-architecture.md](file:///d:/WhisperLink/my-app/docs/ai-architecture.md).
+
 ---
 
 ## 🏗️ Architecture & File Structure
@@ -35,9 +41,12 @@ The project follows a robust **Feature-Sliced Design** mixed with a **Service/Re
 whisperlink/
 ├── prisma/                    # Database migrations and schema definitions
 ├── src/
+├── docs/                      # Architectural design specifications & diagrams
+│   ├── auth-architecture.md   # Authentication design
+│   └── ai-architecture.md     # AI system design
 │   ├── app/                   # Next.js App Router (Pages & API Routes)
 │   │   ├── (auth)/            # Auth pages: login, register, verify, forgot-password
-│   │   ├── api/               # API endpoints (/api/auth/*, /api/messages/*)
+│   │   ├── api/               # API endpoints (/api/auth/*, /api/messages/*, /api/ai/*)
 │   │   ├── dashboard/         # Protected dashboard and inbox views
 │   │   └── u/[username]/      # Public message-sending profile pages
 │   │
@@ -46,9 +55,10 @@ whisperlink/
 │   ├── features/              # Feature-sliced modules encapsulating their own logic
 │   │   ├── auth/              # Auth hooks, stores, API clients, and components
 │   │   ├── messages/          # Messaging hooks, API clients, and Inbox components
-│   │   └── ai/                # (Upcoming) AI integrations
+│   │   └── ai/                # AI hooks, API clients, suggestion pills, and components
 │   │
 │   ├── lib/                   # Core utilities and configuration
+│   │   ├── ai/                # AI Core providers, prompts, parser, and response schemas
 │   │   ├── api/               # Axios client configuration
 │   │   ├── auth/              # JWT, password hashing, and cookie helpers
 │   │   ├── email/             # Nodemailer / Resend clients
@@ -67,7 +77,8 @@ whisperlink/
 │   └── services/              # Business Logic Layer (Processes data before saving)
 │       ├── auth.service.ts
 │       ├── email.service.ts
-│       └── message.service.ts
+│       ├── message.service.ts
+│       └── ai.service.ts
 ```
 
 ### Why this architecture?
@@ -86,6 +97,8 @@ whisperlink/
 * **State Management:** Zustand (Client State) + React Query (Server State)
 * **Authentication:** Custom JWT (`jose`)
 * **Email:** Nodemailer
+* **AI Provider:** Groq Cloud SDK (Llama 3.3-70b-versatile)
 
 ## 📝 What's Next?
-* **AI Integration:** Implementing Google Gemini AI for smart message sentiment analysis and suggested automated replies.
+* **UI Automated Replies:** Fully exposing the backend's automated reply suggestions (casual, witty, thoughtful) inside the user's dashboard view.
+* **Push Notifications:** Real-time alert notifications when new messages are received.

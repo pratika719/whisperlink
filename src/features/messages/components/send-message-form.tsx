@@ -5,6 +5,8 @@ import { Send, MessageSquarePlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/spinner";
 import { useSendMessage } from "@/features/messages/hooks/use-send-message";
+import { useGenerateSuggestions } from "@/features/ai/hooks/use-generate-suggestions";
+import { SuggestionPills } from "@/features/ai/components/suggestion-pills";
 
 const MAX_CHARS = 500;
 
@@ -15,6 +17,7 @@ interface SendMessageFormProps {
 export function SendMessageForm({ username }: SendMessageFormProps) {
   const [content, setContent] = useState("");
   const sendMutation = useSendMessage();
+  const suggestionsMutation = useGenerateSuggestions();
   const charCount = content.length;
 
   function handleSubmit(e: React.FormEvent) {
@@ -26,6 +29,7 @@ export function SendMessageForm({ username }: SendMessageFormProps) {
       {
         onSuccess: () => {
           setContent("");
+          suggestionsMutation.reset(); // clear suggestions on successful send
         },
       }
     );
@@ -67,7 +71,22 @@ export function SendMessageForm({ username }: SendMessageFormProps) {
           className="w-full resize-none rounded-xl border border-border/60 bg-card/60 p-4 text-sm leading-relaxed text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/50 backdrop-blur-sm transition-colors"
           disabled={sendMutation.isPending}
         />
-        <div className="flex justify-end">
+        <div className="flex justify-between items-center px-1">
+          <button
+            type="button"
+            onClick={() => suggestionsMutation.mutate(username)}
+            disabled={suggestionsMutation.isPending || sendMutation.isPending}
+            className="inline-flex items-center gap-1 text-xs font-semibold text-primary/80 hover:text-primary transition-colors disabled:opacity-50 focus:outline-none"
+          >
+            {suggestionsMutation.isPending ? (
+              <span className="flex items-center gap-1">
+                <Spinner size="sm" className="h-3.5 w-3.5 border-primary/20 border-t-primary" />
+                Generating ideas...
+              </span>
+            ) : (
+              <>✨ Generate message ideas</>
+            )}
+          </button>
           <span
             className={`text-xs ${
               charCount > MAX_CHARS
@@ -80,6 +99,13 @@ export function SendMessageForm({ username }: SendMessageFormProps) {
             {charCount}/{MAX_CHARS}
           </span>
         </div>
+
+        {/* Suggestion pills rendering */}
+        <SuggestionPills
+          suggestions={suggestionsMutation.data || []}
+          onSelect={(text) => setContent(text)}
+          isPending={suggestionsMutation.isPending}
+        />
       </div>
 
       <Button

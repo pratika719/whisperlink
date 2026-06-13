@@ -20,3 +20,5 @@ export async function POST() {
     return errorResponse(error);
   }
 }
+
+//clear seesion cookie

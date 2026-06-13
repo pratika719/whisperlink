@@ -15,3 +15,7 @@ export default function QueryProvider({ children }: { children: React.ReactNode 
     </QueryClientProvider>
   );
 }
+
+
+//client provider is used to provide the query client to the application
+//

@@ -9,23 +9,28 @@ export const api = axios.create({
   },
 });
 
-// ── 401 Interceptor ──────────────────────────────────────────────────
-// If the server responds with 401 (expired/invalid token), clear any
-// client-side auth state and redirect to the login page.
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (
-      error.response?.status === 401 &&
-      typeof window !== "undefined" &&
-      !window.location.pathname.startsWith("/login")
-    ) {
-      // Dynamically import to avoid circular dependencies
-      import("@/features/auth/store/auth.store").then(({ useAuthStore }) => {
-        useAuthStore.getState().logout();
-      });
+    if (error.response?.status === 401 && typeof window !== "undefined") {
+      const pathname = window.location.pathname;
+      const isPublicPath =
+        pathname === "/" ||
+        pathname.startsWith("/login") ||
+        pathname.startsWith("/register") ||
+        pathname.startsWith("/forgot-password") ||
+        pathname.startsWith("/reset-password") ||
+        pathname.startsWith("/verify-email") ||
+        pathname.startsWith("/u/");
 
-      window.location.href = "/login";
+      if (!isPublicPath) {
+        // Dynamically import to avoid circular dependencies
+        import("@/features/auth/store/auth.store").then(({ useAuthStore }) => {
+          useAuthStore.getState().logout();
+        });
+
+        window.location.href = "/login";
+      }
     }
 
     return Promise.reject(error);

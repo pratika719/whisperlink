@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import {
   MessageSquare,
@@ -44,6 +44,10 @@ function StatCard({
   );
 }
 
+const emptySubscribe = () => () => {};
+const getOrigin = () => window.location.origin;
+const getServerOrigin = () => "";
+
 export default function DashboardContent() {
   const user = useCurrentUser();
   const { data: unreadCount } = useUnreadCount();
@@ -51,10 +55,8 @@ export default function DashboardContent() {
   const toggleMutation = useToggleMessages();
   const [copied, setCopied] = useState(false);
 
-  const profileUrl =
-    typeof window !== "undefined"
-      ? `${window.location.origin}/u/${user?.username ?? ""}`
-      : "";
+  const origin = useSyncExternalStore(emptySubscribe, getOrigin, getServerOrigin);
+  const profileUrl = origin ? `${origin}/u/${user?.username ?? ""}` : "";
 
   async function copyLink() {
     await navigator.clipboard.writeText(profileUrl);
@@ -62,7 +64,7 @@ export default function DashboardContent() {
     setTimeout(() => setCopied(false), 2000);
   }
 
-  const recentMessages = inbox?.messages.slice(0, 3) ?? [];
+  const recentMessages = inbox?.messages.filter((m) => !m.isArchived).slice(0, 3) ?? [];
 
   return (
     <div className="max-w-4xl space-y-8">

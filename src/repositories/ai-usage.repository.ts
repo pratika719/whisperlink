@@ -5,7 +5,7 @@
 // This repository handles rate limiting for AI features.
 //
 // WHAT PROBLEM DOES THIS SOLVE?
-// AI APIs (like Google Gemini) charge per request.
+// AI APIs (like Groq) charge per request.
 // Without limits, one user could:
 // - Spam your AI endpoint in a loop
 // - Cost you hundreds of dollars overnight
@@ -176,23 +176,39 @@ export const aiUsageRepository = {
    * Prisma's `increment` field operation does this atomically:
    */
   async incrementSuggestions(userId: string) {
-    return prisma.aIUsage.update({
-      where: { userId },
-      data: {
-        suggestionsUsed: { increment: 1 }, // Atomic: UPDATE SET col = col + 1
-        lastUsedAt: new Date(),
-      },
-    });
+    return prisma.$transaction([
+      prisma.aIUsage.update({
+        where: { userId },
+        data: {
+          suggestionsUsed: { increment: 1 },
+          lastUsedAt: new Date(),
+        },
+      }),
+      prisma.aIUsageLog.create({
+        data: {
+          userId,
+          feature: "suggestions",
+        },
+      }),
+    ]);
   },
 
   async incrementAnalysis(userId: string) {
-    return prisma.aIUsage.update({
-      where: { userId },
-      data: {
-        analysisUsed: { increment: 1 },
-        lastUsedAt: new Date(),
-      },
-    });
+    return prisma.$transaction([
+      prisma.aIUsage.update({
+        where: { userId },
+        data: {
+          analysisUsed: { increment: 1 },
+          lastUsedAt: new Date(),
+        },
+      }),
+      prisma.aIUsageLog.create({
+        data: {
+          userId,
+          feature: "sentiment-analysis",
+        },
+      }),
+    ]);
   },
 
   // ============================================================================
@@ -227,7 +243,7 @@ export const aiUsageRepository = {
 //   )
 // }
 //
-// const suggestions = await gemini.generateSuggestions(content)
+// const suggestions = await aiService.generateMessageSuggestions(username)
 // await aiUsageRepository.incrementSuggestions(userId)
 //
 // return Response.json({ suggestions, remaining: remaining - 1 })

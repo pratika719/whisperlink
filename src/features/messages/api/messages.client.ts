@@ -22,6 +22,17 @@ export const messagesClient = {
     });
   },
 
+  toggleRead(id: string, isRead: boolean) {
+    return api.post<ApiResponse<{ success: boolean }>>("/messages/toggle-read", {
+      messageId: id,
+      isRead,
+    });
+  },
+
+  markAllAsRead() {
+    return api.post<ApiResponse<{ success: boolean }>>("/messages/mark-all-read");
+  },
+
   sendMessage(data: SendMessageInput) {
     return api.post<ApiResponse<{ success: boolean }>>("/messages/send", data);
   },
