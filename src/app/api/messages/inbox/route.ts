@@ -11,16 +11,21 @@ export async function GET(req: NextRequest) {
     if (!token) throw unauthorized();
 //auth check
 
-    const session = await verifyAccessToken(token);
+    let session;
+    try {
+      session = await verifyAccessToken(token);
+    } catch {
+      throw unauthorized("Session expired or invalid");
+    }
     const userId = session.sub;
 
     const { searchParams } = new URL(req.url);
     const cursor = searchParams.get("cursor") || undefined;
-    const includeArchived = searchParams.get("archived") !== "false";
+    const filter = (searchParams.get("filter") || "all") as "all" | "unread" | "archived";
 
     const data = await messageRepository.findByReceiver(userId, {
       cursor,
-      includeArchived,
+      filter,
     });
 
     const total = await messageRepository.countTotal(userId);

@@ -1,8 +1,8 @@
 import { redirect } from "next/navigation";
 
 import { DashboardLayout } from "@/components/ui/layout/DashboardLayout";
-import { getSessionCookie } from "@/lib/auth/cookies";
-import { verifyAccessToken } from "@/lib/auth/jwt";
+import { clearSessionCookie, getSessionCookie } from "@/lib/auth/cookies";
+import { verifyTokenSafe } from "@/lib/auth/jwt";
 
 export default async function DashboardGroupLayout({
   children,
@@ -14,8 +14,18 @@ export default async function DashboardGroupLayout({
   if (!token) {
     redirect("/login");
   }
+   const session = await verifyTokenSafe(token);
+  if (!session) {
+    redirect("/login");
+  }
 
-  const user = await verifyAccessToken(token);
+
+  const user = await verifyTokenSafe(token);
+if (!user) {
+  await clearSessionCookie();
+  redirect("/login");
+}
+
 
   return (
     <DashboardLayout

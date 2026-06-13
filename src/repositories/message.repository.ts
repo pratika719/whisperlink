@@ -37,21 +37,33 @@ export const messageRepository = {
     receiverId: string,
     options: {
       cursor?: string;
-      includeArchived?: boolean;
+      filter?: "all" | "unread" | "archived";
       pageSize?: number;
     } = {}
   ) {
     const {
       cursor,
-      includeArchived = false,
+      filter = "all",
       pageSize = DEFAULT_PAGE_SIZE,
     } = options;
+
+    const filterConditions = (() => {
+      switch (filter) {
+        case "unread":
+          return { isRead: false, isArchived: false };
+        case "archived":
+          return { isArchived: true };
+        case "all":
+        default:
+          return { isArchived: false };
+      }
+    })();
 
     const messages = await prisma.message.findMany({
       where: {
         receiverId,
         isDeleted: false,
-        ...(includeArchived ? {} : { isArchived: false }),
+        ...filterConditions,
       },
 
       orderBy: {

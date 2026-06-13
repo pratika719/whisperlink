@@ -1,6 +1,7 @@
 // src/app/api/auth/me/route.ts
 
 import {
+  clearSessionCookie,
   getSessionCookie,
 } from "@/lib/auth/cookies";
 
@@ -13,6 +14,7 @@ import {
   successResponse,
 } from "@/lib/route-handler";
 import { userRepository } from "@/repositories/user.repository";
+import { unauthorized } from "@/lib/errors";
 
 export async function GET() {
   try {
@@ -31,21 +33,19 @@ export async function GET() {
         }
       );
     }
-console.log("token from me",token);
-    const decoded =
-      await verifyAccessToken(token);
+
+    let decoded 
+try {
+  
+      decoded= await verifyAccessToken(token);
+} catch {
+   await clearSessionCookie();
+  throw unauthorized("session expired or invalid");
+}
 
     const user = await userRepository.findById(decoded.sub);
     if (!user) {
-      return Response.json(
-        {
-          success: false,
-          message: "User not found",
-        },
-        {
-          status: 404,
-        }
-      );
+      throw unauthorized("User not found or session invalid");
     }
 
     return successResponse({

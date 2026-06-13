@@ -38,11 +38,13 @@ export async function getSessionCookie() {
     SESSION_COOKIE
   )?.value;
 }
-
 export async function clearSessionCookie() {
   const cookieStore = await cookies();
-
-  cookieStore.delete(
-    SESSION_COOKIE
-  );
+  cookieStore.set(SESSION_COOKIE, "", {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/",
+    maxAge: 0, // Immediately expires the cookie
+  });
 }

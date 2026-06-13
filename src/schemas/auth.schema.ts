@@ -15,10 +15,10 @@ email:z
 .toLowerCase()
 .trim(),
 
-password:z
-.string()
-.min(6, "password must be at least 6 characters long")
-.max(100, "password cannot exceed 100 characters")
+  password:z
+  .string()
+  .min(8, "Password must be at least 8 characters long")
+  .max(100, "Password cannot exceed 100 characters")
 
 })
 

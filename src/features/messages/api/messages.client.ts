@@ -6,8 +6,13 @@ import type {
 } from "@/features/messages/types/message.types";
 
 export const messagesClient = {
-  getInbox() {
-    return api.get<ApiResponse<InboxResponse>>("/messages/inbox");
+  getInbox(filter: "all" | "unread" | "archived" = "all", cursor?: string) {
+    const params = new URLSearchParams();
+    params.set("filter", filter);
+    if (cursor) {
+      params.set("cursor", cursor);
+    }
+    return api.get<ApiResponse<InboxResponse>>(`/messages/inbox?${params.toString()}`);
   },
 
   deleteMessage(id: string) {

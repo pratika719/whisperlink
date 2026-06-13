@@ -34,6 +34,6 @@ export default defineConfig({
   // The `process.env["DATABASE_URL"]` bracket notation prevents TypeScript
   // from complaining if the key might be undefined.
   datasource: {
-    url: process.env["DATABASE_URL"],
-  },
+    url: process.env["DATABASE_URL"]
+  }
 });

@@ -12,20 +12,11 @@ import { InboxSkeleton } from "@/features/messages/components/inbox-skeleton";
 import { EmptyInbox } from "@/features/messages/components/empty-inbox";
 
 export default function InboxPage() {
-  const { data, isLoading, isError } = useInbox();
   const filter = useInboxStore((s) => s.filter);
+  const { data, isLoading, isError } = useInbox(filter);
   const markAllReadMutation = useMarkAllRead();
 
-  const filteredMessages = data?.messages ? (() => {
-    switch (filter) {
-      case "unread":
-        return data.messages.filter((m) => !m.isRead);
-      case "archived":
-        return data.messages.filter((m) => m.isArchived);
-      default:
-        return data.messages.filter((m) => !m.isArchived);
-    }
-  })() : [];
+  const filteredMessages = data?.messages || [];
 
   return (
     <div className="max-w-3xl space-y-6">

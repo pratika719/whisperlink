@@ -1,6 +1,6 @@
 "use client";
 
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 
@@ -14,10 +14,12 @@ export function useLogin() {
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl") || "/dashboard";
   const hydrate = useAuthStore((s) => s.hydrate);
+  const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: (data: LoginInput) => authClient.login(data),
     onSuccess: (res) => {
+      queryClient.setQueryData(["auth", "session"], res.data.data.user);
       hydrate(res.data.data.user);
       toast.success("Welcome back.");
       router.replace(callbackUrl);

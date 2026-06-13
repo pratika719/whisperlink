@@ -24,9 +24,10 @@ payload:jwtPayload):Promise<string>{
     })
     .setSubject(payload.sub)
     .setIssuedAt()
-    .setExpirationTime("30d")
+    .setExpirationTime("7d")
     .sign(secret);
 }
+
 
 export async function verifyAccessToken(
   token: string

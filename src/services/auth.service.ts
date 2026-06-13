@@ -14,6 +14,7 @@ import {
 import {
   hashPassword,
   comparePassword,
+  hashToken
 } from "@/lib/auth/password";
 
 import {
@@ -65,7 +66,8 @@ export const authService={
             });
         }
 
-        const otp = crypto.randomInt(100000, 999999).toString();
+        const rawOtp = crypto.randomInt(100000, 999999).toString();
+        const hashedOtp = hashToken(rawOtp);
 
         await verificationTokenRepository.deleteByUserAndType(
             user.id,
@@ -78,7 +80,7 @@ export const authService={
 
        await verificationTokenRepository.create(
         user.id,
-        otp,
+        hashedOtp,
         TokenType.EMAIL_VERIFICATION,
         expiresAt
        )
@@ -86,7 +88,7 @@ export const authService={
        try {
            await sendVerificationEmail(
             user.email,
-            otp
+            rawOtp
            );
        } catch (error: unknown) {
            console.error("Failed to send verification email during registration:", error);
@@ -140,17 +142,22 @@ export const authService={
       throw new ApiError(400, "OTP expired");
     }
 
-    if (token.token.length !== data.otp.length) {
+    const hashedInputOtp = hashToken(data.otp);
+
+    if (token.token.length !== hashedInputOtp.length) {
       throw new ApiError(400, "Invalid OTP");
     }
 
     const validOtp = crypto.timingSafeEqual(
       Buffer.from(token.token),
-      Buffer.from(data.otp)
+      Buffer.from(hashedInputOtp)
     );
 
+ 
     if (!validOtp) {
-      throw new ApiError(400, "Invalid OTP");
+      // Delete the OTP immediately on failed attempt to prevent brute-forcing
+      await verificationTokenRepository.deleteByToken(token.token);
+      throw new ApiError(400, "Invalid OTP. A new code has been requested.");
     }
 
     await Promise.all([
@@ -211,12 +218,23 @@ async forgotPassword(data:ForgotPasswordInput){
             success:true,
         }
     }
+
+    const latest = await verificationTokenRepository.findLatestByUserAndType(
+        user.id,
+        TokenType.PASSWORD_RESET
+    );
+
+    if (latest && Date.now() - latest.createdAt.getTime() < 60 * 1000) {
+        throw new ApiError(429, "Please wait 60 seconds before requesting another reset email");
+    }
+
     await verificationTokenRepository.deleteByUserAndType(
         user.id,
         TokenType.PASSWORD_RESET
     );
 
-    const token=crypto.randomBytes(32).toString('hex');
+    const rawToken = crypto.randomBytes(32).toString('hex');
+    const hashedToken = hashToken(rawToken);
 
     const expiresAt=new Date(
         Date.now()+60*60*1000
@@ -224,13 +242,13 @@ async forgotPassword(data:ForgotPasswordInput){
 
     await verificationTokenRepository.create(
         user.id,
-        token,
+        hashedToken,
         TokenType.PASSWORD_RESET,
         expiresAt
     )
 
      try {
-         await sendPasswordResetEmail(user.email,token);
+         await sendPasswordResetEmail(user.email, rawToken);
      } catch (error: unknown) {
          console.error("Failed to send password reset email:", error);
          throw new ApiError(500, "Failed to send reset email");
@@ -244,9 +262,10 @@ async forgotPassword(data:ForgotPasswordInput){
   async resetPassword(
     data: ResetPasswordInput
   ) {
+    const hashedToken = hashToken(data.token);
     const record =
       await verificationTokenRepository.findByToken(
-        data.token
+        hashedToken
       );
 
     if (!record) {
@@ -306,24 +325,34 @@ async forgotPassword(data:ForgotPasswordInput){
     };
   }
 
+  const latest = await verificationTokenRepository.findLatestByUserAndType(
+    user.id,
+    TokenType.EMAIL_VERIFICATION
+  );
+
+  if (latest && Date.now() - latest.createdAt.getTime() < 60 * 1000) {
+    throw new ApiError(429, "Please wait 60 seconds before requesting a new verification code");
+  }
+
   await verificationTokenRepository.deleteByUserAndType(
     user.id,
     TokenType.EMAIL_VERIFICATION
   );
 
-  const otp = crypto.randomInt(100000, 999999).toString();
+  const rawOtp = crypto.randomInt(100000, 999999).toString();
+  const hashedOtp = hashToken(rawOtp);
 
   const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
 
   await verificationTokenRepository.create(
     user.id,
-    otp,
+    hashedOtp,
     TokenType.EMAIL_VERIFICATION,
     expiresAt
   );
 
   try {
-      await sendVerificationEmail(user.email, otp);
+      await sendVerificationEmail(user.email, rawOtp);
   } catch (error: unknown) {
       console.error("Failed to resend verification email:", error);
       throw new ApiError(500, "Failed to send verification email");

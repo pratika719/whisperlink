@@ -1,7 +1,7 @@
 import { Metadata } from "next";
 import { MessageSquare, XCircle } from "lucide-react";
 
-import { prisma } from "@/lib/prisma/prisma";
+import { userRepository } from "@/repositories/user.repository";
 import { SendMessageForm } from "@/features/messages/components/send-message-form";
 
 interface PageProps {
@@ -23,14 +23,11 @@ export default async function PublicProfilePage({
 }: PageProps) {
   const { username } = await params;
 
-  // Look up the user by username
-  const user = await prisma.user.findUnique({
-    where: { username },
-    select: { username: true, acceptMessages: true },
-  });
+  // Look up the user by username using the repository pattern
+  const user = await userRepository.findByUsername(username);
 
-  // User not found
-  if (!user) {
+  // User not found or not verified
+  if (!user || !user.isVerified) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-background p-6">
         <div className="w-full max-w-md space-y-6 text-center">

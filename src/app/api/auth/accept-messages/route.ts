@@ -4,6 +4,7 @@ import { getSessionCookie } from "@/lib/auth/cookies";
 import { verifyAccessToken } from "@/lib/auth/jwt";
 import { userRepository } from "@/repositories/user.repository";
 import { errorResponse, successResponse } from "@/lib/route-handler";
+import { unauthorized } from "@/lib/errors";
 
 const AcceptMessagesSchema = z.object({
   acceptMessages: z.boolean({
@@ -16,18 +17,20 @@ export async function POST(req: NextRequest) {
     const token = await getSessionCookie();
 
     if (!token) {
-      return Response.json(
-        {
-          success: false,
-          message: "Unauthorized",
-        },
-        {
-          status: 401,
-        }
-      );
+      throw unauthorized("Unauthorized");
     }
 
-    const decoded = await verifyAccessToken(token);
+    let decoded;
+    try {
+      decoded = await verifyAccessToken(token);
+    } catch {
+      throw unauthorized("Session expired or invalid");
+    }
+
+    const user = await userRepository.findById(decoded.sub);
+    if (!user) {
+      throw unauthorized("User not found or session invalid");
+    }
 
     const body = await req.json();
     const result = AcceptMessagesSchema.safeParse(body);

@@ -12,7 +12,12 @@ export async function GET() {
     const token = await getSessionCookie();
     if (!token) throw unauthorized();
 
-    const session = await verifyAccessToken(token);
+    let session;
+    try {
+      session = await verifyAccessToken(token);
+    } catch {
+      throw unauthorized("Session expired or invalid");
+    }
     const userId = session.sub;
 
     const suggestions = await aiUsageRepository.canUseSuggestions(userId);
