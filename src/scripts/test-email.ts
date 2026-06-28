@@ -4,10 +4,9 @@
 // This directly calls Nodemailer without going through Next.js.
 
 import nodemailer from "nodemailer";
-import * as dotenv from "dotenv";
-import * as path from "path";
+import { loadEnvConfig } from "@next/env";
 
-dotenv.config({ path: path.resolve(process.cwd(), ".env") });
+loadEnvConfig(process.cwd());
 
 const smtpHost = process.env.SMTP_HOST;
 const smtpPort = process.env.SMTP_PORT ? parseInt(process.env.SMTP_PORT) : 587;

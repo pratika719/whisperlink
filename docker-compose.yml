@@ -1,0 +1,37 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: whisperlink-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: whisper_user
+      POSTGRES_PASSWORD: whisper_password
+      POSTGRES_DB: whisperlink_v2
+    ports:
+      - "5434:5432"
+    volumes:
+      - whisperlink_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U whisper_user -d whisperlink_v2"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7
+    container_name: whisperlink-redis
+    restart: unless-stopped
+    ports:
+      - "6380:6379"
+    volumes:
+      - whisperlink_redis_data:/data
+    command: ["redis-server", "--appendonly", "yes"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  whisperlink_postgres_data:
+  whisperlink_redis_data:
