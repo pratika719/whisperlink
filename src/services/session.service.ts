@@ -1,13 +1,14 @@
 import crypto from "crypto";
-import { redis } from "@/lib/redis";
+import { redis } from "@/lib/redis/redis";
 
 
 const SESSION_TTL_SECONDS = 7 * 24 * 60 * 60; // 7 days
 
 
 export type SessionData={
-    userId:string,
-    email:string,
+    userId:string;
+    email:string;
+    username:string;
     createdAt: string;
 }
 
@@ -20,7 +21,7 @@ function createSessionToken() {
 }
 
 export const sessionService={
-    async createSession(data:omit<SessionData>,"createdAt"){
+    async createSession(data: Omit<SessionData, "createdAt">){
         const token =createSessionToken();
         const sessionData:SessionData={
             ...data,

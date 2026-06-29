@@ -22,12 +22,13 @@ import {
   sendPasswordResetEmail,
 } from "@/services/email.service";
 
-import { generateAccessToken } from "@/lib/auth/jwt";
+
 
 import { TokenType } from "@/repositories/verification-token.repository";
 import { requestOtp, otpService } from "@/services/otp.service";
 import { rateLimitService } from "@/services/rate-limit.service";
 import { RATE_LIMITS } from "@/lib/rate-limit-services";
+import { sessionService } from "@/services/session.service";
 
 
 export const authService={
@@ -150,14 +151,20 @@ export const authService={
         if(!user.isVerified){
             throw new ApiError(403, "User not verified");
         }
-         const token = await generateAccessToken({
-            sub: user.id,
-            username: user.username,
-            email: user.email
-         })
+        //  const token = await generateAccessToken({
+        //     sub: user.id,
+        //     username: user.username,
+        //     email: user.email
+        //  })
+
+        const sessionResult=await sessionService.createSession({
+            userId:user.id,
+            email:user.email,
+            username:user.username,
+        })
 
           return {
-      token,
+      token: sessionResult.token,
       user: {
         id: user.id,
         email: user.email,

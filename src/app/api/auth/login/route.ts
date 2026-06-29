@@ -25,6 +25,7 @@ export async function POST(req: NextRequest) {
         const loginResult=await authService.login(result.data);
 
         await setSessionCookie(loginResult.token);
+        
 
         return successResponse({
             user:loginResult.user,
