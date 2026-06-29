@@ -26,11 +26,14 @@ import { generateAccessToken } from "@/lib/auth/jwt";
 
 import { TokenType } from "@/repositories/verification-token.repository";
 import { requestOtp, otpService } from "@/services/otp.service";
+import { rateLimitService } from "@/services/rate-limit.service";
+import { RATE_LIMITS } from "@/lib/rate-limit-services";
 
 
 export const authService={
     async register(data:RegisterInput){
-        const userByEmail = await userRepository.findByEmail(data.email);
+        const normalizedEmail = data.email.toLowerCase().trim();
+        const userByEmail = await userRepository.findByEmail(normalizedEmail);
 
         if (userByEmail && userByEmail.isVerified) {
             throw new ApiError(400, "Email already in use");
@@ -47,6 +50,15 @@ export const authService={
 
         const hashedPassword = await hashPassword(data.password);
         let user;
+
+        const rateLimit = await rateLimitService.check({
+            key: `register:${normalizedEmail}`,
+            ...RATE_LIMITS.REGISTER,
+        });
+
+        if (!rateLimit.allowed) {
+            throw new ApiError(429, `Too many registration attempts. Try again in ${rateLimit.resetInSeconds} seconds.`);
+        }
 
         if (userByEmail) {
             // Update existing unverified user
@@ -115,7 +127,17 @@ export const authService={
     },
 
     async login(data:LoginInput){
-        const user=await userRepository.findByEmailWithPassword(data.email);
+        const normalizedEmail = data.email.toLowerCase().trim();
+        const rateLimit = await rateLimitService.check({
+            key: `login:${normalizedEmail}`,
+            ...RATE_LIMITS.LOGIN,
+        });
+
+        if (!rateLimit.allowed) {
+            throw new ApiError(429, `Too many login attempts. Try again in ${rateLimit.resetInSeconds} seconds.`);
+        }
+
+        const user=await userRepository.findByEmailWithPassword(normalizedEmail);
         console.log(user)
 
         if(!user){
@@ -148,7 +170,17 @@ export const authService={
 },
 
 async forgotPassword(data:ForgotPasswordInput){
-    const user=await userRepository.findByEmail(data.email);
+    const normalizedEmail = data.email.toLowerCase().trim();
+    const rateLimit = await rateLimitService.check({
+        key: `forgot-password:${normalizedEmail}`,
+        ...RATE_LIMITS.FORGOT_PASSWORD,
+    });
+
+    if (!rateLimit.allowed) {
+        throw new ApiError(429, `Too many password reset requests. Try again in ${rateLimit.resetInSeconds} seconds.`);
+    }
+
+    const user=await userRepository.findByEmail(normalizedEmail);
 
     if(!user){
         // Return success even if user not found for security

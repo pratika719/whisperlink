@@ -1,6 +1,8 @@
 import crypto from "crypto";
 import { redis } from "@/lib/redis/redis";
 import { sendVerificationEmail } from "@/services/email.service";
+import { rateLimitService } from "@/services/rate-limit.service";
+import { RATE_LIMITS } from "@/lib/rate-limit-services";
 
 const OTP_TTL_SECONDS = 10 * 60; // 10 minutes
 const OTP_LENGTH = 6;
@@ -81,6 +83,18 @@ export async function requestOtp(email: string) {
   // const user = await userRepository.findByEmail(normalizedEmail);
   // if (!user) throw new Error("User not found");
 
+  const rateLimit = await rateLimitService.check({
+    key: `otp-request:${normalizedEmail}`,
+    ...RATE_LIMITS.OTP_REQUEST,
+  });
+
+  if (!rateLimit.allowed) {
+    return {
+      success: false,
+      message: `Too many OTP requests. Try again in ${rateLimit.resetInSeconds} seconds.`,
+      statusCode: 429,
+    };
+  }
   // 3. Generate OTP.
   const otp = otpService.generateOtp();
 
@@ -100,7 +114,18 @@ export async function verifyOtp(email: string, otp: string) {
   const normalizedEmail = email.toLowerCase().trim();
 
   // 1. Validate email and OTP using Zod before this.
+  const rateLimit = await rateLimitService.check({
+    key: `otp-verify:${normalizedEmail}`,
+    ...RATE_LIMITS.OTP_VERIFY,
+  });
 
+  if (!rateLimit.allowed) {
+    return {
+      success: false,
+      message: `Too many OTP attempts. Try again in ${rateLimit.resetInSeconds} seconds.`,
+      statusCode: 429,
+    };
+  }
   // 2. Verify OTP from Redis.
   const result = await otpService.verifyOtp(normalizedEmail, otp);
 

@@ -40,11 +40,12 @@ try {
       decoded= await verifyAccessToken(token);
 } catch {
    await clearSessionCookie();
-  throw unauthorized("session expired or invalid");
+   throw unauthorized("session expired or invalid");
 }
 
     const user = await userRepository.findById(decoded.sub);
     if (!user) {
+      await clearSessionCookie();
       throw unauthorized("User not found or session invalid");
     }
 
