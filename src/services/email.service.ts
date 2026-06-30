@@ -1,5 +1,6 @@
 import { transporter } from "@/lib/email/nodemailer-client";
 import { env } from "@/lib/env";
+import { logger } from "@/lib/logger";
 
 // ─── Shared styles injected into every email ────────────────────────────────
 const base = `
@@ -103,9 +104,15 @@ export async function sendVerificationEmail(
       subject: "Your WhisperLink verification code: " + otp,
       html,
     });
+    logger.info({ event: "verification_email_sent_to_provider", to });
   } catch (error) {
-    console.error("Failed to send verification email:", error);
-    throw new Error("Failed to send verification email");
+    logger.error({
+      event: "verification_email_send_failed",
+      to,
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+    });
+    throw error;
   }
 }
 
@@ -178,8 +185,14 @@ export async function sendPasswordResetEmail(
       subject: "Reset your WhisperLink password",
       html,
     });
+    logger.info({ event: "password_reset_email_sent_to_provider", to });
   } catch (error) {
-    console.error("Failed to send password reset email:", error);
-    throw new Error("Failed to send password reset email");
+    logger.error({
+      event: "password_reset_email_send_failed",
+      to,
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+    });
+    throw error;
   }
 }

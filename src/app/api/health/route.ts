@@ -23,27 +23,11 @@
 // We implement a DEEP health check here.
 
 import { prisma } from "@/lib/prisma/prisma";
+import { redis } from "@/lib/redis/redis";
 import { emailQueue } from "@/lib/queues/email.queue";
 import { NextResponse } from "next/server";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
-// =============================================================================
-// HOW NEXT.JS 15+ API ROUTES WORK
-// =============================================================================
-//
-// In Next.js App Router, API routes are defined by exporting named functions
-// matching HTTP method names: GET, POST, PUT, PATCH, DELETE
-//
-// Each function receives a `Request` object (Web API standard — not Node.js http)
-// and returns a `Response` object (also Web API standard).
-//
-// NextResponse.json() is a helper that creates a Response with:
-//   - Content-Type: application/json header
-//   - The data serialized as JSON
-//   - The status code you specify (defaults to 200)
-//
-// ROUTE FILE LOCATION → URL MAPPING:
-// src/app/api/health/route.ts → GET /api/health
 
 export async function GET() {
   const startTime = Date.now();
@@ -62,6 +46,23 @@ export async function GET() {
     console.error("[Health Check] Database connection failed:", error);
   }
 
+  let redisStatus = "connected";
+  let redisResponseTimeMs = 0;
+  let redisError: string | null = null;
+
+  try {
+    const redisStart = Date.now();
+    const pingRes = await redis.ping();
+    if (pingRes !== "PONG") {
+      throw new Error(`Unexpected ping response: ${pingRes}`);
+    }
+    redisResponseTimeMs = Date.now() - redisStart;
+  } catch (error) {
+    redisStatus = "disconnected";
+    redisError = error instanceof Error ? error.message : "Unknown redis error";
+    console.error("[Health Check] Redis connection failed:", error);
+  }
+
   let queueStatus = "connected";
   let queueResponseTimeMs = 0;
   let jobCounts: Record<string, number> | null = null;
@@ -77,7 +78,10 @@ export async function GET() {
     console.error("[Health Check] Queue connection failed:", error);
   }
 
-  const isHealthy = databaseStatus === "connected" && queueStatus === "connected";
+  const isHealthy =
+    databaseStatus === "connected" &&
+    redisStatus === "connected" &&
+    queueStatus === "connected";
   const statusCode = isHealthy ? 200 : 503;
 
   return NextResponse.json(
@@ -89,6 +93,11 @@ export async function GET() {
         status: databaseStatus,
         responseTimeMs: databaseResponseTimeMs,
         ...(databaseError && { error: databaseError }),
+      },
+      redis: {
+        status: redisStatus,
+        responseTimeMs: redisResponseTimeMs,
+        ...(redisError && { error: redisError }),
       },
       queue: {
         status: queueStatus,
