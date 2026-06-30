@@ -3,6 +3,7 @@ import { redis } from "@/lib/redis/redis";
 import { sendVerificationEmail } from "@/services/email.service";
 import { rateLimitService } from "@/services/rate-limit.service";
 import { RATE_LIMITS } from "@/lib/rate-limit-services";
+import { enqueueOtpEmail } from "@/lib/queues/email.queue";
 
 const OTP_TTL_SECONDS = 10 * 60; // 10 minutes
 const OTP_LENGTH = 6;
@@ -102,7 +103,8 @@ export async function requestOtp(email: string) {
   await otpService.saveOtp(normalizedEmail, otp);
 
   // 5. Send email directly for now.
-  await sendVerificationEmail(normalizedEmail, otp);
+  await enqueueOtpEmail(normalizedEmail, otp);
+  //await sendVerificationEmail(normalizedEmail, otp);
 
   return {
     success: true,
