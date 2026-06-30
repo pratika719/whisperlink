@@ -75,7 +75,7 @@ export const otpService = {
 
 };
 
-export async function requestOtp(email: string) {
+export async function requestOtp(email: string, requestId?: string) {
   const normalizedEmail = email.toLowerCase().trim();
 
   // 1. Validate email before this using Zod.
@@ -102,8 +102,19 @@ export async function requestOtp(email: string) {
   // 4. Save OTP in Redis.
   await otpService.saveOtp(normalizedEmail, otp);
 
-  // 5. Send email directly for now.
-  await enqueueOtpEmail(normalizedEmail, otp);
+  console.log({
+    event: "before_enqueue_otp_email",
+    email: normalizedEmail,
+    requestId,
+  });
+
+  const job = await enqueueOtpEmail(normalizedEmail, otp, requestId);
+
+  console.log({
+    event: "after_enqueue_otp_email",
+    jobId: job.id,
+    requestId,
+  });
   //await sendVerificationEmail(normalizedEmail, otp);
 
   return {

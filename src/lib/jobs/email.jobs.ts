@@ -3,6 +3,7 @@ export type SendOtpEmailJob = {
   payload: {
     to: string;
     otp: string;
+    requestId?: string;
   };
 };
 
@@ -11,6 +12,7 @@ export type SendWelcomeEmailJob = {
   payload: {
     to: string;
     name?: string;
+    requestId?: string;
   };
 };
 
@@ -18,7 +20,8 @@ export type SendPasswordResetEmailJob = {
   type: "SEND_PASSWORD_RESET_EMAIL";
   payload: {
     to: string;
-    resetUrl: string;
+    token: string;
+    requestId?: string;
   };
 };
 

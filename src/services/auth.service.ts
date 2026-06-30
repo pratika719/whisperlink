@@ -17,10 +17,8 @@ import {
   hashToken
 } from "@/lib/auth/password";
 
-import {
-  sendVerificationEmail,
-  sendPasswordResetEmail,
-} from "@/services/email.service";
+import { enqueuePasswordResetEmail } from "@/lib/queues/email.queue";
+import { createRequestId } from "@/lib/utils/request-id";
 
 
 
@@ -33,6 +31,7 @@ import { sessionService } from "@/services/session.service";
 
 export const authService={
     async register(data:RegisterInput){
+        const requestId = createRequestId();
         const normalizedEmail = data.email.toLowerCase().trim();
         const userByEmail = await userRepository.findByEmail(normalizedEmail);
 
@@ -81,7 +80,7 @@ export const authService={
         }
 
         try {
-            await requestOtp(user.email);
+            await requestOtp(user.email, requestId);
         } catch (error: unknown) {
             console.error("Failed to send verification email during registration:", error);
             const errorMessage = error instanceof Error ? error.message : "Unknown error";
@@ -177,6 +176,7 @@ export const authService={
 },
 
 async forgotPassword(data:ForgotPasswordInput){
+    const requestId = createRequestId();
     const normalizedEmail = data.email.toLowerCase().trim();
     const rateLimit = await rateLimitService.check({
         key: `forgot-password:${normalizedEmail}`,
@@ -225,11 +225,11 @@ async forgotPassword(data:ForgotPasswordInput){
     )
 
      try {
-         await sendPasswordResetEmail(user.email, rawToken);
-     } catch (error: unknown) {
-         console.error("Failed to send password reset email:", error);
-         throw new ApiError(500, "Failed to send reset email");
-     }
+          await enqueuePasswordResetEmail(user.email, rawToken, requestId);
+      } catch (error: unknown) {
+          console.error("Failed to enqueue password reset email:", error);
+          throw new ApiError(500, "Failed to send reset email");
+      }
 
     return {
         success:true,
@@ -283,6 +283,7 @@ async forgotPassword(data:ForgotPasswordInput){
   },
 
   async resendVerificationEmail(email: string) {
+    const requestId = createRequestId();
     const user = await userRepository.findByEmail(email);
 
     if (!user) {
@@ -304,7 +305,7 @@ async forgotPassword(data:ForgotPasswordInput){
     }
 
     try {
-        await requestOtp(email);
+        await requestOtp(email, requestId);
     } catch (error: unknown) {
         console.error("Failed to resend verification email:", error);
         throw new ApiError(500, "Failed to send verification email");

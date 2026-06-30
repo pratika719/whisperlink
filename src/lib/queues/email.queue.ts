@@ -27,21 +27,19 @@ export const emailQueue = new Queue<EmailJob>("email-queue", {
     },
   },
 });
-
-export async function enqueueOtpEmail(to: string, otp: string) {
-  return emailQueue.add(
-    "send-otp-email",
-    {
-      type: "SEND_OTP_EMAIL",
-      payload: {
-        to,
-        otp,
-      },
+export async function enqueueOtpEmail(
+  to: string,
+  otp: string,
+  requestId?: string
+) {
+  return emailQueue.add("send-otp-email", {
+    type: "SEND_OTP_EMAIL",
+    payload: {
+      to,
+      otp,
+      requestId,
     },
-    {
-      jobId: `otp-email-${to}`,
-    }
-  );
+  });
 }
 
 export async function enqueueWelcomeEmail(to: string, name?: string) {
@@ -54,12 +52,17 @@ export async function enqueueWelcomeEmail(to: string, name?: string) {
   });
 }
 
-export async function enqueuePasswordResetEmail(to: string, resetUrl: string) {
+export async function enqueuePasswordResetEmail(
+  to: string,
+  token: string,
+  requestId?: string
+) {
   return emailQueue.add("send-password-reset-email", {
     type: "SEND_PASSWORD_RESET_EMAIL",
     payload: {
       to,
-      resetUrl,
+      token,
+      requestId,
     },
   });
 }

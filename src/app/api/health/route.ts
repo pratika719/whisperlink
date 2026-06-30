@@ -25,7 +25,8 @@
 import { prisma } from "@/lib/prisma/prisma";
 import { emailQueue } from "@/lib/queues/email.queue";
 import { NextResponse } from "next/server";
-
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 // =============================================================================
 // HOW NEXT.JS 15+ API ROUTES WORK
 // =============================================================================
