@@ -1,4 +1,4 @@
-import { transporter } from "@/lib/email/nodemailer-client";
+import { sendEmail } from "@/lib/email/brevo-client";
 import { env } from "@/lib/env";
 import { logger } from "@/lib/logger";
 
@@ -97,23 +97,11 @@ export async function sendVerificationEmail(
     ${footer}
   `;
 
-  try {
-    await transporter.sendMail({
-      from: env.EMAIL_FROM,
-      to,
-      subject: "Your WhisperLink verification code: " + otp,
-      html,
-    });
-    logger.info({ event: "verification_email_sent_to_provider", to });
-  } catch (error) {
-    logger.error({
-      event: "verification_email_send_failed",
-      to,
-      error: error instanceof Error ? error.message : String(error),
-      stack: error instanceof Error ? error.stack : undefined,
-    });
-    throw error;
-  }
+  await sendEmail({
+    to,
+    subject: "Your WhisperLink verification code: " + otp,
+    html,
+  });
 }
 
 // ─── Password Reset Email ─────────────────────────────────────────────────────
@@ -178,21 +166,9 @@ export async function sendPasswordResetEmail(
     ${footer}
   `;
 
-  try {
-    await transporter.sendMail({
-      from: env.EMAIL_FROM,
-      to,
-      subject: "Reset your WhisperLink password",
-      html,
-    });
-    logger.info({ event: "password_reset_email_sent_to_provider", to });
-  } catch (error) {
-    logger.error({
-      event: "password_reset_email_send_failed",
-      to,
-      error: error instanceof Error ? error.message : String(error),
-      stack: error instanceof Error ? error.stack : undefined,
-    });
-    throw error;
-  }
+  await sendEmail({
+    to,
+    subject: "Reset your WhisperLink password",
+    html,
+  });
 }

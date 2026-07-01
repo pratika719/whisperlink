@@ -2,9 +2,8 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.sendVerificationEmail = sendVerificationEmail;
 exports.sendPasswordResetEmail = sendPasswordResetEmail;
-const nodemailer_client_1 = require("../lib/email/nodemailer-client");
+const brevo_client_1 = require("../lib/email/brevo-client");
 const env_1 = require("../lib/env");
-const logger_1 = require("../lib/logger");
 // ─── Shared styles injected into every email ────────────────────────────────
 const base = `
   <div style="
@@ -94,24 +93,11 @@ async function sendVerificationEmail(to, otp) {
     </div>
     ${footer}
   `;
-    try {
-        await nodemailer_client_1.transporter.sendMail({
-            from: env_1.env.EMAIL_FROM,
-            to,
-            subject: "Your WhisperLink verification code: " + otp,
-            html,
-        });
-        logger_1.logger.info({ event: "verification_email_sent_to_provider", to });
-    }
-    catch (error) {
-        logger_1.logger.error({
-            event: "verification_email_send_failed",
-            to,
-            error: error instanceof Error ? error.message : String(error),
-            stack: error instanceof Error ? error.stack : undefined,
-        });
-        throw error;
-    }
+    await (0, brevo_client_1.sendEmail)({
+        to,
+        subject: "Your WhisperLink verification code: " + otp,
+        html,
+    });
 }
 // ─── Password Reset Email ─────────────────────────────────────────────────────
 async function sendPasswordResetEmail(to, resetToken) {
@@ -169,22 +155,9 @@ async function sendPasswordResetEmail(to, resetToken) {
     </div>
     ${footer}
   `;
-    try {
-        await nodemailer_client_1.transporter.sendMail({
-            from: env_1.env.EMAIL_FROM,
-            to,
-            subject: "Reset your WhisperLink password",
-            html,
-        });
-        logger_1.logger.info({ event: "password_reset_email_sent_to_provider", to });
-    }
-    catch (error) {
-        logger_1.logger.error({
-            event: "password_reset_email_send_failed",
-            to,
-            error: error instanceof Error ? error.message : String(error),
-            stack: error instanceof Error ? error.stack : undefined,
-        });
-        throw error;
-    }
+    await (0, brevo_client_1.sendEmail)({
+        to,
+        subject: "Reset your WhisperLink password",
+        html,
+    });
 }

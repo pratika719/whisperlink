@@ -43,9 +43,7 @@ services:
       DATABASE_URL: postgresql://whisper_user:whisper_password@postgres:5432/whisperlink_v2?schema=public
       REDIS_URL: redis://redis:6379
       AUTH_SECRET: ${AUTH_SECRET}
-      SMTP_HOST: ${SMTP_HOST}
-      SMTP_USER: ${SMTP_USER}
-      SMTP_PASSWORD: ${SMTP_PASSWORD}
+      BREVO_API_KEY: ${BREVO_API_KEY}
       EMAIL_FROM: ${EMAIL_FROM}
       GROQ_API_KEY: ${GROQ_API_KEY}
       NEXT_PUBLIC_APP_URL: http://localhost:3000

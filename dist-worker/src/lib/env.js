@@ -63,12 +63,8 @@ exports.env = (0, env_nextjs_1.createEnv)({
         // WHY 32? Security requirement — shorter secrets can be brute-forced.
         // Generate one with: openssl rand -base64 32
         AUTH_SECRET: zod_1.z.string().min(32),
-        // SMTP CONFIGURATION
-        // Nodemailer will use these to send emails via SMTP.
-        SMTP_HOST: zod_1.z.string().min(1),
-        SMTP_PORT: zod_1.z.coerce.number().default(587),
-        SMTP_USER: zod_1.z.string().min(1),
-        SMTP_PASSWORD: zod_1.z.string().min(1),
+        // BREVO CONFIGURATION
+        BREVO_API_KEY: zod_1.z.string().min(1),
         // GROQ API KEY
         // Used for AI features: message analysis, response suggestions.
         // Keys look like: gsk_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
@@ -101,10 +97,7 @@ exports.env = (0, env_nextjs_1.createEnv)({
     runtimeEnv: {
         DATABASE_URL: process.env.DATABASE_URL,
         AUTH_SECRET: process.env.AUTH_SECRET,
-        SMTP_HOST: process.env.SMTP_HOST,
-        SMTP_PORT: process.env.SMTP_PORT,
-        SMTP_USER: process.env.SMTP_USER,
-        SMTP_PASSWORD: process.env.SMTP_PASSWORD,
+        BREVO_API_KEY: process.env.BREVO_API_KEY,
         GROQ_API_KEY: process.env.GROQ_API_KEY,
         EMAIL_FROM: process.env.EMAIL_FROM,
         NODE_ENV: process.env.NODE_ENV,
