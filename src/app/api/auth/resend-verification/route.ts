@@ -9,9 +9,10 @@ import { authService } from "@/services/auth.service";
 import {
   errorResponse,
   successResponse,
+  withLogging,
 } from "@/lib/route-handler";
 
-export async function POST(
+export const POST = withLogging(async function (
   req: NextRequest
 ) {
   try {
@@ -42,4 +43,4 @@ export async function POST(
   } catch (error) {
     return errorResponse(error);
   }
-}
+});

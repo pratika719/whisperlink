@@ -1,5 +1,6 @@
-import { transporter } from "@/lib/email/nodemailer-client";
+import { sendEmail } from "@/lib/email/brevo-client";
 import { env } from "@/lib/env";
+import { logger } from "@/lib/logger";
 
 // ─── Shared styles injected into every email ────────────────────────────────
 const base = `
@@ -96,17 +97,11 @@ export async function sendVerificationEmail(
     ${footer}
   `;
 
-  try {
-    await transporter.sendMail({
-      from: env.EMAIL_FROM,
-      to,
-      subject: "Your WhisperLink verification code: " + otp,
-      html,
-    });
-  } catch (error) {
-    console.error("Failed to send verification email:", error);
-    throw new Error("Failed to send verification email");
-  }
+  await sendEmail({
+    to,
+    subject: "Your WhisperLink verification code: " + otp,
+    html,
+  });
 }
 
 // ─── Password Reset Email ─────────────────────────────────────────────────────
@@ -171,15 +166,9 @@ export async function sendPasswordResetEmail(
     ${footer}
   `;
 
-  try {
-    await transporter.sendMail({
-      from: env.EMAIL_FROM,
-      to,
-      subject: "Reset your WhisperLink password",
-      html,
-    });
-  } catch (error) {
-    console.error("Failed to send password reset email:", error);
-    throw new Error("Failed to send password reset email");
-  }
+  await sendEmail({
+    to,
+    subject: "Reset your WhisperLink password",
+    html,
+  });
 }

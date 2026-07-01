@@ -1,7 +1,7 @@
 // src/app/api/auth/logout/route.ts
 
 import {
-  clearSessionCookie,
+  clearSessionCookie,getSessionCookie
 } from "@/lib/auth/cookies";
 
 import {
@@ -9,8 +9,16 @@ import {
   errorResponse,
 } from "@/lib/route-handler";
 
+import {sessionService} from "@/services/session.service"
+
 export async function POST() {
   try {
+     const token = await getSessionCookie();
+
+  if (token) {
+    await sessionService.deleteSession(token);
+  }
+
     await clearSessionCookie();
 
     return successResponse({

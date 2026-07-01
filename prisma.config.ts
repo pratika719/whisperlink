@@ -6,14 +6,17 @@
 // Prisma where your schema lives, where migrations go, and how to connect
 // to your database. Think of it as Prisma's "settings file".
 //
-// WHY dotenv/config?
-// Next.js automatically loads .env, but Prisma CLI runs as a stand alone Node
-// process — NOT inside Next.js. So it can't read .env on its own.
-// `import "dotenv/config"` manually loads your .env file so that
-// process.env.DATABASE_URL is available when Prisma CLI runs.
+// WHY @next/env?
+// Next.js automatically loads environment variables, but Prisma CLI runs as a
+// standalone Node process — NOT inside Next.js. So it can't read files on its own.
+// We use Next.js's native `loadEnvConfig` loader to parse and load environment
+// variables (including .env and .env.local overrides) exactly like Next.js does.
 
-import "dotenv/config";
+import { loadEnvConfig } from "@next/env";
 import { defineConfig } from "prisma/config";
+
+// Load Next.js environment configuration (merges .env and .env.local)
+loadEnvConfig(process.cwd());
 
 export default defineConfig({
   // WHERE IS YOUR SCHEMA?

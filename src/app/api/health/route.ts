@@ -23,78 +23,90 @@
 // We implement a DEEP health check here.
 
 import { prisma } from "@/lib/prisma/prisma";
+import { redis } from "@/lib/redis/redis";
+import { emailQueue } from "@/lib/queues/email.queue";
 import { NextResponse } from "next/server";
-
-// =============================================================================
-// HOW NEXT.JS 15+ API ROUTES WORK
-// =============================================================================
-//
-// In Next.js App Router, API routes are defined by exporting named functions
-// matching HTTP method names: GET, POST, PUT, PATCH, DELETE
-//
-// Each function receives a `Request` object (Web API standard — not Node.js http)
-// and returns a `Response` object (also Web API standard).
-//
-// NextResponse.json() is a helper that creates a Response with:
-//   - Content-Type: application/json header
-//   - The data serialized as JSON
-//   - The status code you specify (defaults to 200)
-//
-// ROUTE FILE LOCATION → URL MAPPING:
-// src/app/api/health/route.ts → GET /api/health
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 export async function GET() {
   const startTime = Date.now();
 
+  let databaseStatus = "connected";
+  let databaseResponseTimeMs = 0;
+  let databaseError: string | null = null;
+
   try {
-    // DEEP HEALTH CHECK: Actually query the database
-    //
-    // prisma.$queryRaw`SELECT 1` sends the simplest possible SQL query.
-    // Every database supports "SELECT 1" — it just returns the number 1.
-    // If this succeeds: the connection works.
-    // If this throws: the database is unreachable, misconfigured, or down.
-    //
-    // WHY NOT a real table query like prisma.user.count()?
-    // - $queryRaw`SELECT 1` works even if no tables exist yet
-    // - It's faster (no table scan)
-    // - It tests connectivity without table access permissions
+    const dbStart = Date.now();
     await prisma.$queryRaw`SELECT 1`;
-
-    const responseTime = Date.now() - startTime;
-
-    return NextResponse.json(
-      {
-        status: "healthy",
-        timestamp: new Date().toISOString(),
-
-        // Database connection confirmed working
-        database: {
-          status: "connected",
-          responseTimeMs: responseTime,
-        },
-
-        // App environment info
-        environment: process.env.NODE_ENV ?? "unknown",
-      },
-      { status: 200 }
-    );
+    databaseResponseTimeMs = Date.now() - dbStart;
   } catch (error) {
-    // Database is unreachable — return 503 (Service Unavailable)
-    // 503 is the correct status for "I'm up but my dependency is down"
-    // vs 500 which means "I crashed unexpectedly"
-
+    databaseStatus = "disconnected";
+    databaseError = error instanceof Error ? error.message : "Unknown database error";
     console.error("[Health Check] Database connection failed:", error);
-
-    return NextResponse.json(
-      {
-        status: "unhealthy",
-        timestamp: new Date().toISOString(),
-        database: {
-          status: "disconnected",
-          error: error instanceof Error ? error.message : "Unknown database error",
-        },
-      },
-      { status: 503 }
-    );
   }
+
+  let redisStatus = "connected";
+  let redisResponseTimeMs = 0;
+  let redisError: string | null = null;
+
+  try {
+    const redisStart = Date.now();
+    const pingRes = await redis.ping();
+    if (pingRes !== "PONG") {
+      throw new Error(`Unexpected ping response: ${pingRes}`);
+    }
+    redisResponseTimeMs = Date.now() - redisStart;
+  } catch (error) {
+    redisStatus = "disconnected";
+    redisError = error instanceof Error ? error.message : "Unknown redis error";
+    console.error("[Health Check] Redis connection failed:", error);
+  }
+
+  let queueStatus = "connected";
+  let queueResponseTimeMs = 0;
+  let jobCounts: Record<string, number> | null = null;
+  let queueError: string | null = null;
+
+  try {
+    const queueStart = Date.now();
+    jobCounts = await emailQueue.getJobCounts();
+    queueResponseTimeMs = Date.now() - queueStart;
+  } catch (error) {
+    queueStatus = "disconnected";
+    queueError = error instanceof Error ? error.message : "Unknown queue error";
+    console.error("[Health Check] Queue connection failed:", error);
+  }
+
+  const isHealthy =
+    databaseStatus === "connected" &&
+    redisStatus === "connected" &&
+    queueStatus === "connected";
+  const statusCode = isHealthy ? 200 : 503;
+
+  return NextResponse.json(
+    {
+      status: isHealthy ? "healthy" : "unhealthy",
+      timestamp: new Date().toISOString(),
+      totalTimeMs: Date.now() - startTime,
+      database: {
+        status: databaseStatus,
+        responseTimeMs: databaseResponseTimeMs,
+        ...(databaseError && { error: databaseError }),
+      },
+      redis: {
+        status: redisStatus,
+        responseTimeMs: redisResponseTimeMs,
+        ...(redisError && { error: redisError }),
+      },
+      queue: {
+        status: queueStatus,
+        responseTimeMs: queueResponseTimeMs,
+        jobCounts,
+        ...(queueError && { error: queueError }),
+      },
+      environment: process.env.NODE_ENV ?? "unknown",
+    },
+    { status: statusCode }
+  );
 }

@@ -1,23 +1,18 @@
-// Quick smoke test for Nodemailer — run with:
+// Quick smoke test for Brevo — run with:
 //   npx tsx src/scripts/test-email.ts your-real-email@gmail.com
 //
-// This directly calls Nodemailer without going through Next.js.
+// This directly calls our Brevo email service.
 
-import nodemailer from "nodemailer";
-import * as dotenv from "dotenv";
-import * as path from "path";
+import { loadEnvConfig } from "@next/env";
+loadEnvConfig(process.cwd());
 
-dotenv.config({ path: path.resolve(process.cwd(), ".env") });
+// We will import the client dynamically inside main() after env variables are loaded.
 
-const smtpHost = process.env.SMTP_HOST;
-const smtpPort = process.env.SMTP_PORT ? parseInt(process.env.SMTP_PORT) : 587;
-const smtpUser = process.env.SMTP_USER;
-const smtpPass = process.env.SMTP_PASSWORD;
 const emailFrom = process.env.EMAIL_FROM;
 const toEmail = process.argv[2];
 
-if (!smtpHost || !smtpUser || !smtpPass) {
-  console.error("❌ SMTP configuration is missing in .env");
+if (!process.env.BREVO_API_KEY) {
+  console.error("❌ BREVO_API_KEY is missing in .env");
   process.exit(1);
 }
 
@@ -31,47 +26,31 @@ if (!toEmail) {
   process.exit(1);
 }
 
-const transporter = nodemailer.createTransport({
-  host: smtpHost,
-  port: smtpPort,
-  secure: smtpPort === 465,
-  auth: {
-    user: smtpUser,
-    pass: smtpPass,
-  },
-});
-
 async function main() {
-  console.log(`\n📧 Sending test email to: ${toEmail}`);
+  const { sendEmail } = await import("../lib/email/brevo-client");
+
+  console.log(`\n📧 Sending test email via Brevo to: ${toEmail}`);
   console.log(`   From: ${emailFrom}`);
-  console.log(`   SMTP Host: ${smtpHost}`);
 
   try {
-    const info = await transporter.sendMail({
-      from: emailFrom!,
+    await sendEmail({
       to: toEmail,
-      subject: "WhisperLink — Nodemailer Email Test ✅",
+      subject: "WhisperLink — Brevo Email Test ✅",
       html: `
-        <div style="font-family:sans-serif;background:#0f0f1a;padding:40px;border-radius:16px;max-width:480px;margin:0 auto;">
-          <h2 style="color:#818cf8;">✅ Nodemailer is working!</h2>
-          <p style="color:#9ca3af;">Your WhisperLink email configuration is correctly set up using Nodemailer.</p>
-          <p style="color:#9ca3af;">SMTP Host: <code style="color:#f9fafb;">${smtpHost}</code></p>
+        <div style="font-family:sans-serif;background:#0f0f1a;padding:40px;border-radius:16px;max-width:480px;margin:0 auto;border:1px solid rgba(255,255,255,0.08);">
+          <h2 style="color:#818cf8;margin-bottom:16px;">✅ Brevo is working!</h2>
+          <p style="color:#9ca3af;line-height:1.6;">Your WhisperLink email configuration is correctly set up using Brevo SMTP API.</p>
           <p style="color:#9ca3af;">From: <code style="color:#f9fafb;">${emailFrom}</code></p>
         </div>
       `,
     });
 
     console.log("\n✅ Email sent successfully!");
-    console.log("   Message ID:", info.messageId);
-    console.log("\n👉 Check your inbox (and spam folder).");
+    console.log("👉 Check your inbox (and spam folder).");
   } catch (error) {
     const err = error as Error;
-    console.error("\n❌ Nodemailer returned an error:");
+    console.error("\n❌ Brevo returned an error:");
     console.error(err.message || err);
-    console.log("\n💡 Common causes:");
-    console.log("   • SMTP credentials are incorrect");
-    console.log("   • SMTP host or port is incorrect");
-    console.log("   • Firewalls are blocking the connection");
     process.exit(1);
   }
 }
