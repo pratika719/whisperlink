@@ -10,7 +10,8 @@
     "lint": "eslint",
     "worker:dev": "dotenv -e .env.local -- tsx -r tsconfig-paths/register workers/index.ts",
     "worker:build": "tsc -p tsconfig.worker.json && tsc-alias -p tsconfig.worker.json",
-    "worker:start": "node dist-worker/workers/index.js"
+    "worker:start": "node dist-worker/workers/index.js",
+    "worker:start:local": "dotenv -e .env.local -- node dist-worker/workers/index.js"
   },
   "prisma": {
     "schema": "src/lib/prisma/schema.prisma"
