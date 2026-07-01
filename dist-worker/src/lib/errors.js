@@ -1,0 +1,16 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.internalError = exports.conflict = exports.forbidden = exports.unauthorized = exports.badRequest = exports.notFound = void 0;
+const api_error_1 = require("./api-error");
+const notFound = (message = "Not found") => new api_error_1.ApiError(404, message);
+exports.notFound = notFound;
+const badRequest = (message = "Bad request") => new api_error_1.ApiError(400, message);
+exports.badRequest = badRequest;
+const unauthorized = (message = "Unauthorized") => new api_error_1.ApiError(401, message);
+exports.unauthorized = unauthorized;
+const forbidden = (message = "Forbidden") => new api_error_1.ApiError(403, message);
+exports.forbidden = forbidden;
+const conflict = (message = "Conflict") => new api_error_1.ApiError(409, message);
+exports.conflict = conflict;
+const internalError = (message = "Internal server error") => new api_error_1.ApiError(500, message);
+exports.internalError = internalError;

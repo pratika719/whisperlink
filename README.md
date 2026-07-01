@@ -362,3 +362,53 @@ npm run build
 # Run code linter checks
 npm run lint
 ```
+
+---
+
+## 🚀 Deployment & Containerization
+
+WhisperLink is designed to run as a multi-service containerized application, separating the frontend Next.js app from the BullMQ email and background job worker.
+
+### 📦 Worker Service Architecture
+
+The worker service resides in `workers/index.ts` and processes queued background jobs (such as verification and password reset emails). To run the worker service, you can use the following commands:
+
+#### 1. Running Locally
+- **Development Mode** (uses on-the-fly TS transpilation and resolves path mappings):
+  ```bash
+  npm run worker:dev
+  ```
+- **Production Build & Run** (compiles TypeScript to JavaScript in `dist-worker/` and resolves `@/` imports using `tsc-alias`):
+  ```bash
+  npm run worker:build
+  npm run worker:start
+  ```
+
+#### 2. Running inside Docker
+A dedicated `Dockerfile.worker` is provided for containerizing the worker. 
+
+To build and run the worker image individually:
+```bash
+docker build -f Dockerfile.worker -t whisperlink-worker .
+docker run -e REDIS_URL=redis://your-redis:6379 -e DATABASE_URL=postgresql://your-db:5432/db whisperlink-worker
+```
+
+### 🕸️ Orchestrating with Docker Compose
+
+A pre-configured `docker-compose.yml` orchestrates:
+- **PostgreSQL (`postgres`)**: Database service.
+- **Redis (`redis`)**: Message broker for BullMQ.
+- **Worker (`worker`)**: Background job processor.
+
+Inside the containerized environment, the worker automatically resolves connections using the internal Docker Compose service names (`postgres` and `redis`) instead of `localhost`:
+- `DATABASE_URL=postgresql://whisper_user:whisper_password@postgres:5432/whisperlink_v2?schema=public`
+- `REDIS_URL=redis://redis:6379`
+
+To spin up all services together:
+```bash
+docker compose up -d --build
+```
+
+### 📋 Production Guidelines
+For checklist validation (including TLS/SSL configurations, PgBouncer pooling, and secret key generation), please refer to our [production_env_checklist.md](file:///d:/WhisperLink/my-app/production_env_checklist.md).
+
